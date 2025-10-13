@@ -1,6 +1,5 @@
 #include "../include/Singleton.h"
-#include <iostream>
-#include <cassert>
+#include <gtest/gtest.h>
 #include <thread>
 #include <vector>
 #include <string>
@@ -24,9 +23,7 @@ public:
 };
 
 // Test 1: Basic singleton functionality
-void testBasicSingleton() {
-    std::cout << "Test 1: Basic Singleton Functionality" << std::endl;
-
+TEST(SingletonTest, BasicSingletonFunctionality) {
     TestSingleton& instance1 = TestSingleton::getInstance();
     instance1.setValue(42);
     instance1.setName("first");
@@ -34,21 +31,16 @@ void testBasicSingleton() {
     TestSingleton& instance2 = TestSingleton::getInstance();
 
     // Both should reference the same object
-    assert(instance2.getValue() == 42);
-    assert(instance2.getName() == "first");
+    EXPECT_EQ(instance2.getValue(), 42);
+    EXPECT_EQ(instance2.getName(), "first");
 
     // Modify through second reference
     instance2.setValue(100);
-    assert(instance1.getValue() == 100);
-
-    std::cout << "  ✓ Same instance retrieved multiple times" << std::endl;
-    std::cout << "  ✓ State is shared between references" << std::endl;
+    EXPECT_EQ(instance1.getValue(), 100);
 }
 
 // Test 2: Thread safety
-void testThreadSafety() {
-    std::cout << "\nTest 2: Thread Safety" << std::endl;
-
+TEST(SingletonTest, ThreadSafety) {
     const int numThreads = 10;
     std::vector<std::thread> threads;
     std::vector<TestSingleton*> instances(numThreads);
@@ -68,10 +60,8 @@ void testThreadSafety() {
     // All instances should be the same
     TestSingleton* firstInstance = instances[0];
     for (int i = 1; i < numThreads; ++i) {
-        assert(instances[i] == firstInstance);
+        EXPECT_EQ(instances[i], firstInstance);
     }
-
-    std::cout << "  ✓ All threads received the same instance" << std::endl;
 }
 
 // Test 3: Multiple singleton types
@@ -87,9 +77,7 @@ public:
     int getData() const { return data; }
 };
 
-void testMultipleSingletonTypes() {
-    std::cout << "\nTest 3: Multiple Singleton Types" << std::endl;
-
+TEST(SingletonTest, MultipleSingletonTypes) {
     TestSingleton& ts = TestSingleton::getInstance();
     ts.setValue(111);
 
@@ -97,28 +85,14 @@ void testMultipleSingletonTypes() {
     as.setData(222);
 
     // Each should maintain its own state
-    assert(ts.getValue() == 111);
-    assert(as.getData() == 222);
+    EXPECT_EQ(ts.getValue(), 111);
+    EXPECT_EQ(as.getData(), 222);
 
     // Verify they are different instances
-    assert(static_cast<void*>(&ts) != static_cast<void*>(&as));
-
-    std::cout << "  ✓ Different singleton types maintain separate instances" << std::endl;
+    EXPECT_NE(static_cast<void*>(&ts), static_cast<void*>(&as));
 }
 
-int main() {
-    std::cout << "=== Running Singleton Unit Tests ===" << std::endl;
-    std::cout << std::endl;
-
-    try {
-        testBasicSingleton();
-        testThreadSafety();
-        testMultipleSingletonTypes();
-
-        std::cout << "\n=== All Singleton Tests Passed! ===" << std::endl;
-        return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "\n✗ Test failed with exception: " << e.what() << std::endl;
-        return 1;
-    }
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
