@@ -2,6 +2,13 @@
 
 A collection of thread-safe C++17 utilities including a Singleton pattern implementation and a TaskRunner for asynchronous task execution.
 
+## Quick Links
+
+- [Detailed Documentation](#documentation)
+- [Quick Start](#quick-start)
+- [Building](#building)
+- [Usage Examples](#usage)
+
 ## Features
 
 ### Singleton
@@ -19,6 +26,75 @@ A collection of thread-safe C++17 utilities including a Singleton pattern implem
 - Infinite task execution with stop capability
 - Automatic task cleanup after execution
 
+## Documentation
+
+Comprehensive documentation is available in the `doc/` folder:
+
+- **[Singleton.md](doc/Singleton.md)** - Deep dive into Singleton pattern implementation
+  - Design patterns and architecture
+  - Thread safety mechanisms
+  - Memory management details
+  - Best practices and common pitfalls
+
+- **[TaskRunner.md](doc/TaskRunner.md)** - Complete TaskRunner guide
+  - Architecture and core components
+  - Task execution lifecycle
+  - Thread management and safety
+  - Performance considerations
+
+- **[API-Reference.md](doc/API-Reference.md)** - Full API documentation
+  - Complete method signatures
+  - Parameters and return values
+  - Thread safety guarantees
+  - Error handling
+
+- **[Examples.md](doc/Examples.md)** - Practical usage examples
+  - Real-world use cases
+  - Design patterns
+  - Combined usage scenarios
+  - Complete working code
+
+## Quick Start
+
+### Singleton
+
+```cpp
+#include "Singleton.h"
+
+class MyClass : public Singleton<MyClass> {
+    friend class Singleton<MyClass>;
+private:
+    MyClass() { /* initialization */ }
+public:
+    void doSomething() { /* ... */ }
+};
+
+// Usage
+MyClass::getInstance().doSomething();
+```
+
+### TaskRunner
+
+```cpp
+#include "TaskRunner.h"
+
+TaskRunner runner;
+
+// Single task
+runner.executeTask([]() {
+    std::cout << "Task executed!" << std::endl;
+});
+
+// Repeated task (5 times, every 100ms)
+runner.executeRepeatedTask(
+    []() { std::cout << "Tick" << std::endl; },
+    std::chrono::milliseconds(100),
+    5
+);
+
+runner.waitForCompletion();
+```
+
 ## Directory Structure
 
 ```
@@ -31,6 +107,11 @@ singleton_library/
 ├── tests/
 │   ├── SingletonTest.cpp    # Unit tests for Singleton
 │   └── TaskRunnerTest.cpp   # Unit tests for TaskRunner
+├── doc/                 # Detailed documentation
+│   ├── Singleton.md     # Singleton pattern deep dive
+│   ├── TaskRunner.md    # TaskRunner comprehensive guide
+│   ├── API-Reference.md # Complete API documentation
+│   └── Examples.md      # Practical usage examples
 ├── lib/                 # Static library output (created by make)
 ├── build/               # Build artifacts (created by make)
 ├── Makefile
@@ -65,138 +146,58 @@ make clean
 
 ## Usage
 
-### Singleton Usage
+For complete usage examples, see [Examples.md](doc/Examples.md).
 
-To create a singleton class, inherit from `Singleton<YourClass>` and make `Singleton<YourClass>` a friend:
+### Basic Singleton Usage
 
 ```cpp
 #include "Singleton.h"
-#include <string>
 
-class MyClass : public Singleton<MyClass> {
-    friend class Singleton<MyClass>;
-
+class Logger : public Singleton<Logger> {
+    friend class Singleton<Logger>;
 private:
-    // Constructor must be private
-    MyClass() : data("default") {}
-
-    std::string data;
-
+    Logger() { /* initialize */ }
 public:
-    void setData(const std::string& newData) {
-        data = newData;
-    }
-
-    std::string getData() const {
-        return data;
+    void log(const std::string& msg) {
+        std::cout << "[LOG] " << msg << std::endl;
     }
 };
+
+// Usage anywhere in your code
+Logger::getInstance().log("Application started");
 ```
 
-Accessing the singleton instance:
-
-```cpp
-int main() {
-    // Get the singleton instance
-    MyClass& instance1 = MyClass::getInstance();
-    instance1.setData("Hello, Singleton!");
-
-    // Get the same instance again
-    MyClass& instance2 = MyClass::getInstance();
-
-    // Both references point to the same object
-    std::cout << instance2.getData() << std::endl; // Outputs: Hello, Singleton!
-
-    return 0;
-}
-```
-
-### TaskRunner Usage
-
-The TaskRunner allows you to execute tasks asynchronously in separate threads.
-
-#### Execute a Single Task
+### Basic TaskRunner Usage
 
 ```cpp
 #include "TaskRunner.h"
-#include <iostream>
 
-int main() {
-    TaskRunner runner;
+TaskRunner runner;
 
-    // Execute a lambda
-    runner.executeTask([]() {
-        std::cout << "Task executed in thread!" << std::endl;
-    });
+// Single task
+runner.executeTask([]() {
+    processData();
+});
 
-    // Execute a function
-    auto myFunction = []() {
-        std::cout << "Another task!" << std::endl;
-    };
-    runner.executeTask(myFunction);
+// Repeated task (10 times, every 500ms)
+runner.executeRepeatedTask(
+    []() { checkStatus(); },
+    std::chrono::milliseconds(500),
+    10
+);
 
-    // Wait for all tasks to complete
-    runner.waitForCompletion();
-
-    return 0;
-}
+// Wait for completion
+runner.waitForCompletion();
 ```
 
-#### Execute a Repeated Task
+For more examples including:
+- Logger, Config, and Database Connection singletons
+- Parallel file processing
+- Background services
+- Event systems
+- And much more...
 
-```cpp
-#include "TaskRunner.h"
-#include <iostream>
-#include <chrono>
-
-int main() {
-    TaskRunner runner;
-
-    // Execute task 5 times with 100ms interval
-    runner.executeRepeatedTask(
-        []() {
-            std::cout << "Repeated task execution" << std::endl;
-        },
-        std::chrono::milliseconds(100),
-        5  // Execute 5 times
-    );
-
-    runner.waitForCompletion();
-
-    return 0;
-}
-```
-
-#### Execute an Infinite Task (with stop)
-
-```cpp
-#include "TaskRunner.h"
-#include <iostream>
-#include <chrono>
-#include <thread>
-
-int main() {
-    TaskRunner runner;
-
-    // Execute task infinitely with 200ms interval
-    runner.executeRepeatedTask(
-        []() {
-            std::cout << "Infinite task running..." << std::endl;
-        },
-        std::chrono::milliseconds(200),
-        0  // 0 means infinite
-    );
-
-    // Let it run for a while
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-
-    // Stop all tasks
-    runner.stopAll();
-    runner.waitForCompletion();
-
-    return 0;
-}
-```
+See the [Examples.md](doc/Examples.md) documentation.
 
 ### Compiling Your Project
 
@@ -213,73 +214,61 @@ g++ -std=c++17 -I./singleton_library/include your_main.cpp \
     -L./singleton_library/lib -ltaskrunner -o your_program -pthread
 ```
 
-## How It Works
+## Key Concepts
 
-### Singleton
-1. Uses CRTP (Curiously Recurring Template Pattern)
-2. The derived class is passed as a template parameter
-3. `std::call_once` ensures thread-safe initialization
-4. The constructor is protected, preventing direct instantiation
-5. Copy and move operations are deleted
-6. `getInstance()` provides the single access point
+### Singleton Pattern
+- **CRTP Design**: Uses Curiously Recurring Template Pattern for type-safe inheritance
+- **Thread-Safe**: `std::call_once` guarantees safe initialization in multi-threaded environments
+- **Lazy Initialization**: Instance created only when first accessed
+- **Non-Copyable**: Copy and move operations explicitly deleted
 
-### TaskRunner
-1. Maintains separate thread pools for single and repeated tasks
-2. Single tasks are executed once and automatically cleaned up
-3. Repeated tasks run in dedicated threads with configurable intervals
-4. Uses atomic flags for thread-safe stop signals
-5. Mutex protection for task collection management
-6. Automatic task deletion after completion
+For detailed information, see [Singleton.md](doc/Singleton.md).
+
+### TaskRunner Architecture
+- **Dual Task Types**: Single-execution and repeated tasks managed separately
+- **Thread Per Task**: Each task runs in its own thread for true parallelism
+- **Responsive Stopping**: Repeated tasks can be stopped with ~10ms response time
+- **Automatic Cleanup**: RAII design ensures proper resource cleanup
+
+For detailed information, see [TaskRunner.md](doc/TaskRunner.md).
 
 ## Thread Safety
 
-Both implementations are fully thread-safe:
+Both components are fully thread-safe. See [API-Reference.md](doc/API-Reference.md#thread-safety-summary) for detailed thread safety guarantees.
 
-**Singleton:**
-- Uses `std::call_once` with `std::once_flag` for initialization
-- Guarantees single instance creation even in multi-threaded environments
+**Important**: While the library infrastructure is thread-safe, you must protect shared state accessed within tasks using mutexes or atomic types.
 
-**TaskRunner:**
-- Thread-safe task submission with mutex protection
-- Atomic flags for stopping repeated tasks
-- Safe concurrent task execution
-- No race conditions during task cleanup
+## Testing
 
-## Running Tests
-
-The library includes comprehensive unit tests for both components:
+Run comprehensive unit tests:
 
 ```bash
 make run-tests
 ```
 
-**Singleton Tests:**
-- Basic singleton functionality
-- Thread safety verification
-- Multiple singleton types
+**Test Coverage:**
+- Singleton: Basic functionality, thread safety, multiple types
+- TaskRunner: Single/repeated tasks, stopping, mixed scenarios
 
-**TaskRunner Tests:**
-- Single task execution with lambdas
-- Single task execution with functions
-- Multiple concurrent tasks
-- Repeated tasks with fixed count
-- Infinite tasks with stop functionality
-- Mixed single and repeated tasks
-- Task capture and state management
+See test files in `tests/` for examples of proper usage.
 
 ## Requirements
 
-- C++17 or later
-- Standard library with `<memory>`, `<mutex>`, `<thread>`, and `<chrono>` support
-- pthread library (automatically linked with `-pthread`)
+- **C++ Standard**: C++17 or later
+- **Compiler**: GCC 7+, Clang 5+, MSVC 2017+
+- **Platform**: Linux, macOS, Windows (with pthread support)
+- **Dependencies**: Standard library, pthread
 
-## Project Organization
+## Contributing
 
-- **include/** - All header files (.h)
-- **taskrunner/** - TaskRunner implementation (.cpp)
-- **tests/** - Unit tests for each component
-- **lib/** - Generated static library
-- **build/** - Build artifacts
+This is a simple utility library. Feel free to use, modify, and extend it for your needs.
+
+## Additional Resources
+
+- [Singleton Deep Dive](doc/Singleton.md) - Design patterns, thread safety, best practices
+- [TaskRunner Guide](doc/TaskRunner.md) - Architecture, lifecycle, performance
+- [API Reference](doc/API-Reference.md) - Complete method documentation
+- [Examples](doc/Examples.md) - Real-world usage patterns
 
 ## License
 
