@@ -1,0 +1,73 @@
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -I./include
+LDFLAGS = -pthread
+
+# Directories
+INCLUDE_DIR = include
+TEST_DIR = tests
+LIB_DIR = lib
+BUILD_DIR = build
+DEPS_DIR = .deps
+
+# Google Test directories (local to project)
+GTEST_DIR = $(DEPS_DIR)/googletest
+GTEST_BUILD_DIR = $(GTEST_DIR)/build
+GTEST_INCLUDE = $(GTEST_DIR)/googletest/include
+GTEST_LIB = $(GTEST_BUILD_DIR)/lib/libgtest.a
+GTEST_MAIN_LIB = $(GTEST_BUILD_DIR)/lib/libgtest_main.a
+
+# Test files
+SINGLETON_TEST = $(TEST_DIR)/SingletonTest.cpp
+TASKRUNNER_TEST = $(TEST_DIR)/TaskRunnerTest.cpp
+
+# Output
+LIBRARY = $(LIB_DIR)/libtaskrunner.a
+SINGLETON_TEST_BIN = $(BUILD_DIR)/singleton_test
+TASKRUNNER_TEST_BIN = $(BUILD_DIR)/taskrunner_test
+
+# Default target
+all: run-tests
+
+# Setup Google Test (downloads and builds locally)
+setup-gtest: $(GTEST_LIB)
+	@echo "Google Test is ready at $(GTEST_DIR)"
+
+$(GTEST_LIB):
+	@echo "Downloading Google Test..."
+	@bash scripts/setup-google-unit-test.sh $(PWD)
+	@echo "Building Google Test locally..."
+	@mkdir -p $(GTEST_BUILD_DIR)
+	@cd $(GTEST_BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release .. && $(MAKE)
+	@echo "Google Test built successfully in $(GTEST_BUILD_DIR)"
+
+# Build test executables with Google Test
+tests: $(SINGLETON_TEST_BIN) $(TASKRUNNER_TEST_BIN)
+	@echo "Test executables built successfully"
+
+$(SINGLETON_TEST_BIN): $(SINGLETON_TEST) $(GTEST_LIB) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -I$(GTEST_INCLUDE) $< -o $@ $(GTEST_LIB) $(GTEST_MAIN_LIB) $(LDFLAGS)
+
+$(TASKRUNNER_TEST_BIN): $(TASKRUNNER_TEST) $(LIBRARY) $(GTEST_LIB) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -I$(GTEST_INCLUDE) $< -o $@ -L$(LIB_DIR) -ltaskrunner $(GTEST_LIB) $(GTEST_MAIN_LIB) $(LDFLAGS)
+
+# Run tests
+run-tests: tests
+	@echo "\n=== Running Singleton Tests ==="
+	@$(SINGLETON_TEST_BIN) || (echo "\n✗ Singleton tests failed!" && exit 1)
+	@echo "\n=== Running TaskRunner Tests ==="
+	@$(TASKRUNNER_TEST_BIN) || (echo "\n✗ TaskRunner tests failed!" && exit 1)
+	@echo "\n=== All Tests Passed! ==="
+
+# Create directories
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# Clean test artifacts (keeps Google Test)
+clean:
+	rm -rf $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test
+
+# Clean everything including Google Test
+clean-all:
+	rm -rf $(DEPS_DIR) $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test
+
+.PHONY: all setup-gtest tests run-tests clean clean-all

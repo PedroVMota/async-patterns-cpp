@@ -1,6 +1,6 @@
 build/*
 lib/*
-
+.deps/*
 *.o
 *.so
 *.a

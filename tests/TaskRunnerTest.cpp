@@ -1,14 +1,11 @@
 #include "../include/TaskRunner.h"
-#include <iostream>
-#include <cassert>
+#include <gtest/gtest.h>
 #include <atomic>
 #include <chrono>
 #include <string>
 
 // Test 1: Execute single task with lambda
-void testSingleTaskLambda() {
-    std::cout << "Test 1: Single Task with Lambda" << std::endl;
-
+TEST(TaskRunnerTest, SingleTaskLambda) {
     TaskRunner runner;
     std::atomic<bool> taskExecuted{false};
 
@@ -19,8 +16,7 @@ void testSingleTaskLambda() {
 
     runner.waitForCompletion();
 
-    assert(taskExecuted == true);
-    std::cout << "  ✓ Lambda task executed successfully" << std::endl;
+    EXPECT_TRUE(taskExecuted);
 }
 
 // Test 2: Execute single task with function
@@ -29,9 +25,7 @@ void myFunction(std::atomic<int>& counter) {
     counter++;
 }
 
-void testSingleTaskFunction() {
-    std::cout << "\nTest 2: Single Task with Function" << std::endl;
-
+TEST(TaskRunnerTest, SingleTaskFunction) {
     TaskRunner runner;
     std::atomic<int> counter{0};
 
@@ -41,14 +35,11 @@ void testSingleTaskFunction() {
 
     runner.waitForCompletion();
 
-    assert(counter == 1);
-    std::cout << "  ✓ Function task executed successfully" << std::endl;
+    EXPECT_EQ(counter, 1);
 }
 
 // Test 3: Execute multiple single tasks
-void testMultipleSingleTasks() {
-    std::cout << "\nTest 3: Multiple Single Tasks" << std::endl;
-
+TEST(TaskRunnerTest, MultipleSingleTasks) {
     TaskRunner runner;
     std::atomic<int> counter{0};
 
@@ -62,14 +53,11 @@ void testMultipleSingleTasks() {
 
     runner.waitForCompletion();
 
-    assert(counter == numTasks);
-    std::cout << "  ✓ All " << numTasks << " tasks executed successfully" << std::endl;
+    EXPECT_EQ(counter, numTasks);
 }
 
 // Test 4: Repeated task with fixed count
-void testRepeatedTaskFixedCount() {
-    std::cout << "\nTest 4: Repeated Task with Fixed Count" << std::endl;
-
+TEST(TaskRunnerTest, RepeatedTaskFixedCount) {
     TaskRunner runner;
     std::atomic<int> counter{0};
 
@@ -84,14 +72,11 @@ void testRepeatedTaskFixedCount() {
 
     runner.waitForCompletion();
 
-    assert(counter == repeatCount);
-    std::cout << "  ✓ Task repeated exactly " << repeatCount << " times" << std::endl;
+    EXPECT_EQ(counter, repeatCount);
 }
 
 // Test 5: Repeated task with stop
-void testRepeatedTaskWithStop() {
-    std::cout << "\nTest 5: Repeated Task with Stop" << std::endl;
-
+TEST(TaskRunnerTest, RepeatedTaskWithStop) {
     TaskRunner runner;
     std::atomic<int> counter{0};
 
@@ -115,16 +100,12 @@ void testRepeatedTaskWithStop() {
     runner.waitForCompletion();
 
     // Counter should have stopped incrementing
-    assert(counter == countAtStop);
-    assert(counter > 0);  // Should have executed at least once
-
-    std::cout << "  ✓ Infinite task stopped correctly after " << counter << " executions" << std::endl;
+    EXPECT_EQ(counter, countAtStop);
+    EXPECT_GT(counter, 0);  // Should have executed at least once
 }
 
 // Test 6: Multiple repeated tasks
-void testMultipleRepeatedTasks() {
-    std::cout << "\nTest 6: Multiple Repeated Tasks" << std::endl;
-
+TEST(TaskRunnerTest, MultipleRepeatedTasks) {
     TaskRunner runner;
     std::atomic<int> counter1{0};
     std::atomic<int> counter2{0};
@@ -143,15 +124,12 @@ void testMultipleRepeatedTasks() {
 
     runner.waitForCompletion();
 
-    assert(counter1 == 3);
-    assert(counter2 == 5);
-    std::cout << "  ✓ Multiple repeated tasks executed correctly" << std::endl;
+    EXPECT_EQ(counter1, 3);
+    EXPECT_EQ(counter2, 5);
 }
 
 // Test 7: Mixed single and repeated tasks
-void testMixedTasks() {
-    std::cout << "\nTest 7: Mixed Single and Repeated Tasks" << std::endl;
-
+TEST(TaskRunnerTest, MixedTasks) {
     TaskRunner runner;
     std::atomic<int> singleCounter{0};
     std::atomic<int> repeatedCounter{0};
@@ -175,15 +153,12 @@ void testMixedTasks() {
 
     runner.waitForCompletion();
 
-    assert(singleCounter == 3);
-    assert(repeatedCounter == 4);
-    std::cout << "  ✓ Mixed tasks executed correctly" << std::endl;
+    EXPECT_EQ(singleCounter, 3);
+    EXPECT_EQ(repeatedCounter, 4);
 }
 
 // Test 8: Task with captured variables
-void testTaskWithCapture() {
-    std::cout << "\nTest 8: Task with Captured Variables" << std::endl;
-
+TEST(TaskRunnerTest, TaskWithCapture) {
     TaskRunner runner;
     std::string result;
     std::atomic<bool> done{false};
@@ -197,29 +172,11 @@ void testTaskWithCapture() {
 
     runner.waitForCompletion();
 
-    assert(done == true);
-    assert(result == "Hello from task!");
-    std::cout << "  ✓ Task with captured variables executed correctly" << std::endl;
+    EXPECT_TRUE(done);
+    EXPECT_EQ(result, "Hello from task!");
 }
 
-int main() {
-    std::cout << "=== Running TaskRunner Unit Tests ===" << std::endl;
-    std::cout << std::endl;
-
-    try {
-        testSingleTaskLambda();
-        testSingleTaskFunction();
-        testMultipleSingleTasks();
-        testRepeatedTaskFixedCount();
-        testRepeatedTaskWithStop();
-        testMultipleRepeatedTasks();
-        testMixedTasks();
-        testTaskWithCapture();
-
-        std::cout << "\n=== All TaskRunner Tests Passed! ===" << std::endl;
-        return 0;
-    } catch (const std::exception& e) {
-        std::cerr << "\n✗ Test failed with exception: " << e.what() << std::endl;
-        return 1;
-    }
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
