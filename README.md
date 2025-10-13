@@ -123,7 +123,7 @@ singleton_library/
 Build the static library:
 
 ```bash
-make
+make or sudo make install #for system wide
 ```
 
 Build and run tests:
