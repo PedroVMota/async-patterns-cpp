@@ -21,9 +21,14 @@ Installing the library system-wide makes it available to all projects on your sy
 
 ```bash
 cd /path/to/singleton_library
-make
 sudo make install
 ```
+
+The build process will:
+- Download and build Google Test (if not already present)
+- Build the static library
+- Run all unit tests (build fails if tests don't pass)
+- Install the library system-wide
 
 This will install:
 - Library: `/usr/local/lib/libtaskrunner.a`
@@ -158,7 +163,7 @@ git submodule update --init --recursive
 
 ```bash
 cd lib/cpp-utils
-make
+make  # Downloads Google Test, runs tests, then builds library
 cd ../..
 ```
 
@@ -182,7 +187,7 @@ cp -r /path/to/singleton_library /path/to/your/project/lib/cpp-utils
 
 ```bash
 cd lib/cpp-utils
-make
+make  # Downloads Google Test, runs tests, then builds library
 cd ../..
 ```
 
