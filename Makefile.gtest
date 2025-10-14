@@ -19,11 +19,13 @@ GTEST_MAIN_LIB = $(GTEST_BUILD_DIR)/lib/libgtest_main.a
 # Test files
 SINGLETON_TEST = $(TEST_DIR)/SingletonTest.cpp
 TASKRUNNER_TEST = $(TEST_DIR)/TaskRunnerTest.cpp
+MEMPOOL_TEST = $(TEST_DIR)/MemPoolTest.cpp
 
 # Output
 LIBRARY = $(LIB_DIR)/libtaskrunner.a
 SINGLETON_TEST_BIN = $(BUILD_DIR)/singleton_test
 TASKRUNNER_TEST_BIN = $(BUILD_DIR)/taskrunner_test
+MEMPOOL_TEST_BIN = $(BUILD_DIR)/mempool_test
 
 # Default target
 all: run-tests
@@ -41,7 +43,7 @@ $(GTEST_LIB):
 	@echo "Google Test built successfully in $(GTEST_BUILD_DIR)"
 
 # Build test executables with Google Test
-tests: $(SINGLETON_TEST_BIN) $(TASKRUNNER_TEST_BIN)
+tests: $(SINGLETON_TEST_BIN) $(TASKRUNNER_TEST_BIN) $(MEMPOOL_TEST_BIN)
 	@echo "Test executables built successfully"
 
 $(SINGLETON_TEST_BIN): $(SINGLETON_TEST) $(GTEST_LIB) | $(BUILD_DIR)
@@ -50,12 +52,16 @@ $(SINGLETON_TEST_BIN): $(SINGLETON_TEST) $(GTEST_LIB) | $(BUILD_DIR)
 $(TASKRUNNER_TEST_BIN): $(TASKRUNNER_TEST) $(LIBRARY) $(GTEST_LIB) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -I$(GTEST_INCLUDE) $< -o $@ -L$(LIB_DIR) -ltaskrunner $(GTEST_LIB) $(GTEST_MAIN_LIB) $(LDFLAGS)
 
+$(MEMPOOL_TEST_BIN): $(MEMPOOL_TEST) $(LIBRARY) $(GTEST_LIB) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -I$(GTEST_INCLUDE) $< -o $@ -L$(LIB_DIR) -ltaskrunner $(GTEST_LIB) $(GTEST_MAIN_LIB) $(LDFLAGS)
+
 # Run tests
 run-tests: tests
 	@echo "\n=== Running Singleton Tests ==="
 	@$(SINGLETON_TEST_BIN) || (echo "\n✗ Singleton tests failed!" && exit 1)
 	@echo "\n=== Running TaskRunner Tests ==="
 	@$(TASKRUNNER_TEST_BIN) || (echo "\n✗ TaskRunner tests failed!" && exit 1)
+	@$(MEMPOOL_TEST_BIN) || (echo "\n✗ MemPool tests failed!" && exit 1)
 	@echo "\n=== All Tests Passed! ==="
 
 # Create directories
@@ -64,10 +70,10 @@ $(BUILD_DIR):
 
 # Clean test artifacts (keeps Google Test)
 clean:
-	rm -rf $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test
+	rm -rf $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test $(BUILD_DIR)/mempool_test
 
 # Clean everything including Google Test
 clean-all:
-	rm -rf $(DEPS_DIR) $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test
+	rm -rf $(DEPS_DIR) $(BUILD_DIR)/singleton_test $(BUILD_DIR)/taskrunner_test $(BUILD_DIR)/mempool_test
 
 .PHONY: all setup-gtest tests run-tests clean clean-all

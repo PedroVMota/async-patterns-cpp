@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -I./include
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -I./include
 AR = ar
 ARFLAGS = rcs
 
@@ -23,6 +23,9 @@ BUILD_DIR = build
 TASKRUNNER_SRC = $(SRC_DIR)/TaskRunner.cpp
 TASKRUNNER_OBJ = $(BUILD_DIR)/TaskRunner.o
 
+MEMPOOL_SRC = $(SRC_DIR)/MemPool.cpp
+MEMPOOL_OBJ = $(BUILD_DIR)/MemPool.o
+
 # Output
 LIBRARY = $(LIB_DIR)/libtaskrunner.a
 
@@ -33,11 +36,15 @@ all: library
 library: $(LIBRARY)
 	@echo "Static library built successfully: $(LIBRARY)"
 
-$(LIBRARY): $(TASKRUNNER_OBJ) | $(LIB_DIR)
+$(LIBRARY): $(TASKRUNNER_OBJ) $(MEMPOOL_OBJ) | $(LIB_DIR)
 	$(AR) $(ARFLAGS) $@ $^
 
 $(TASKRUNNER_OBJ): $(TASKRUNNER_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(MEMPOOL_OBJ): $(MEMPOOL_SRC) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 
 # Create directories
 $(BUILD_DIR):
@@ -54,6 +61,7 @@ install-local: library
 	@cp $(LIBRARY) $(LOCAL_INSTALL_LIB_DIR)/
 	@cp $(INCLUDE_DIR)/Singleton.h $(LOCAL_INSTALL_INCLUDE_DIR)/
 	@cp $(INCLUDE_DIR)/TaskRunner.h $(LOCAL_INSTALL_INCLUDE_DIR)/
+	@cp $(INCLUDE_DIR)/MemPool.h $(LOCAL_INSTALL_INCLUDE_DIR)/
 	@echo "Local installation complete!"
 	@echo "Library installed to: $(LOCAL_INSTALL_LIB_DIR)/libtaskrunner.a"
 	@echo "Headers installed to: $(LOCAL_INSTALL_INCLUDE_DIR)/"
@@ -69,6 +77,7 @@ install: library
 	install -m 644 $(LIBRARY) $(INSTALL_LIB_DIR)/
 	install -m 644 $(INCLUDE_DIR)/Singleton.h $(INSTALL_INCLUDE_DIR)/
 	install -m 644 $(INCLUDE_DIR)/TaskRunner.h $(INSTALL_INCLUDE_DIR)/
+	install -m 644 $(INCLUDE_DIR)/MemPool.h $(INSTALL_INCLUDE_DIR)/
 	@echo "System-wide installation complete!"
 	@echo "Library installed to: $(INSTALL_LIB_DIR)/libtaskrunner.a"
 	@echo "Headers installed to: $(INSTALL_INCLUDE_DIR)/"
@@ -79,6 +88,7 @@ uninstall:
 	rm -f $(INSTALL_LIB_DIR)/libtaskrunner.a
 	rm -f $(INSTALL_INCLUDE_DIR)/Singleton.h
 	rm -f $(INSTALL_INCLUDE_DIR)/TaskRunner.h
+	rm -f $(INSTALL_INCLUDE_DIR)/MemPool.h
 	@echo "Uninstallation complete!"
 
 # Clean build artifacts
