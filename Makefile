@@ -1,94 +1,66 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2 -I./include
-LDFLAGS = -pthread
-AR = ar
-ARFLAGS = rcs
+# Main Makefile - Coordinates testing and library building
+#
+# Flow:
+# 1. Makefile.gtest - Downloads Google Test, compiles tests, runs tests
+# 2. Makefile.lib   - Compiles library and handles installation
+#
+# Usage:
+#   make              - Run tests, then build library
+#   make install-local - Run tests, build library, install locally
+#   make install      - Run tests, build library, install system-wide
+#   make clean        - Clean all build artifacts
+#   make clean-all    - Clean everything including Google Test
 
-# Installation directories
-PREFIX = /usr/local
-INSTALL_LIB_DIR = $(PREFIX)/lib
-INSTALL_INCLUDE_DIR = $(PREFIX)/include
-
-# Directories
-INCLUDE_DIR = include
-SRC_DIR = taskrunner
-TEST_DIR = tests
-LIB_DIR = lib
-BUILD_DIR = build
-
-# Source files
-TASKRUNNER_SRC = $(SRC_DIR)/TaskRunner.cpp
-TASKRUNNER_OBJ = $(BUILD_DIR)/TaskRunner.o
-
-# Test files
-SINGLETON_TEST = $(TEST_DIR)/SingletonTest.cpp
-TASKRUNNER_TEST = $(TEST_DIR)/TaskRunnerTest.cpp
-
-# Output
-LIBRARY = $(LIB_DIR)/libtaskrunner.a
-SINGLETON_TEST_BIN = $(BUILD_DIR)/singleton_test
-TASKRUNNER_TEST_BIN = $(BUILD_DIR)/taskrunner_test
-
-# Default target
+# Default target - runs tests then builds library
 all: library
 
-# Build the static library
-library: $(LIBRARY)
-	@echo "TaskRunner library built successfully: $(LIBRARY)"
-	@echo "Header files in: $(INCLUDE_DIR)"
+# Build the static library (requires tests to pass first)
+library:
+	@echo "=== Step 1: Building library for testing ==="
+	@$(MAKE) -f Makefile.lib library
+	@echo "\n=== Step 2: Running tests with Google Test ==="
+	@$(MAKE) -f Makefile.gtest run-tests || (echo "\n✗ Tests failed! Removing library." && $(MAKE) -f Makefile.lib clean && exit 1)
+	@echo "\n=== Step 3: All tests passed! Library is ready ==="
+	@echo "\n=== Build complete! ==="
+	@$(MAKE) -f Makefile.lib library
 
-$(LIBRARY): $(TASKRUNNER_OBJ) | $(LIB_DIR)
-	$(AR) $(ARFLAGS) $@ $^
-
-$(TASKRUNNER_OBJ): $(TASKRUNNER_SRC) | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Build test executables
-tests: $(SINGLETON_TEST_BIN) $(TASKRUNNER_TEST_BIN)
-	@echo "Test executables built successfully"
-
-$(SINGLETON_TEST_BIN): $(SINGLETON_TEST) | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $< -o $@ $(LDFLAGS)
-
-$(TASKRUNNER_TEST_BIN): $(TASKRUNNER_TEST) $(LIBRARY) | $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) $< -o $@ -L$(LIB_DIR) -ltaskrunner $(LDFLAGS)
-
-# Run tests
-run-tests: tests
-	@echo "\n=== Running Singleton Tests ==="
-	@$(SINGLETON_TEST_BIN)
-	@echo "\n=== Running TaskRunner Tests ==="
-	@$(TASKRUNNER_TEST_BIN)
-
-# Create directories
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
-
-$(LIB_DIR):
-	mkdir -p $(LIB_DIR)
-
-# Clean build artifacts
-clean:
-	rm -rf $(BUILD_DIR) $(LIB_DIR)
+# Install library and headers locally (in build/install)
+install-local:
+	@echo "=== Step 1: Building library for testing ==="
+	@$(MAKE) -f Makefile.lib library
+	@echo "\n=== Step 2: Running tests with Google Test ==="
+	@$(MAKE) -f Makefile.gtest run-tests || (echo "\n✗ Tests failed! Library will not be installed." && $(MAKE) -f Makefile.lib clean && exit 1)
+	@echo "\n=== Step 3: Tests passed! Installing library locally ==="
+	@$(MAKE) -f Makefile.lib install-local
+	@echo "\n=== Local installation complete! ==="
 
 # Install library and headers system-wide (requires sudo)
-install: all
-	@echo "Installing TaskRunner library to $(PREFIX)..."
-	install -d $(INSTALL_LIB_DIR)
-	install -d $(INSTALL_INCLUDE_DIR)
-	install -m 644 $(LIBRARY) $(INSTALL_LIB_DIR)/
-	install -m 644 $(INCLUDE_DIR)/Singleton.h $(INSTALL_INCLUDE_DIR)/
-	install -m 644 $(INCLUDE_DIR)/TaskRunner.h $(INSTALL_INCLUDE_DIR)/
-	@echo "Installation complete!"
-	@echo "Library installed to: $(INSTALL_LIB_DIR)/libtaskrunner.a"
-	@echo "Headers installed to: $(INSTALL_INCLUDE_DIR)/"
+install:
+	@echo "=== Step 1: Building library for testing ==="
+	@$(MAKE) -f Makefile.lib library
+	@echo "\n=== Step 2: Running tests with Google Test ==="
+	@$(MAKE) -f Makefile.gtest run-tests || (echo "\n✗ Tests failed! Library will not be installed." && $(MAKE) -f Makefile.lib clean && exit 1)
+	@echo "\n=== Step 3: Tests passed! Installing library system-wide ==="
+	@$(MAKE) -f Makefile.lib install
+	@echo "\n=== System-wide installation complete! ==="
 
 # Uninstall library and headers from system
 uninstall:
-	@echo "Uninstalling TaskRunner library from $(PREFIX)..."
-	rm -f $(INSTALL_LIB_DIR)/libtaskrunner.a
-	rm -f $(INSTALL_INCLUDE_DIR)/Singleton.h
-	rm -f $(INSTALL_INCLUDE_DIR)/TaskRunner.h
-	@echo "Uninstallation complete!"
+	@$(MAKE) -f Makefile.lib uninstall
 
-.PHONY: all library tests run-tests clean install uninstall
+# Clean build artifacts
+clean:
+	@echo "Cleaning test artifacts..."
+	@$(MAKE) -f Makefile.gtest clean
+	@echo "Cleaning library artifacts..."
+	@$(MAKE) -f Makefile.lib clean
+	@echo "Clean complete!"
+
+# Clean everything including Google Test
+clean-all:
+	@echo "Cleaning all artifacts including Google Test..."
+	@$(MAKE) -f Makefile.gtest clean-all
+	@$(MAKE) -f Makefile.lib clean
+	@echo "Deep clean complete!"
+
+.PHONY: all library install-local install uninstall clean clean-all

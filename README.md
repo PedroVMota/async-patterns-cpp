@@ -105,43 +105,63 @@ singleton_library/
 ├── taskrunner/
 │   └── TaskRunner.cpp   # TaskRunner implementation
 ├── tests/
-│   ├── SingletonTest.cpp    # Unit tests for Singleton
-│   └── TaskRunnerTest.cpp   # Unit tests for TaskRunner
+│   ├── SingletonTest.cpp    # Unit tests for Singleton (Google Test)
+│   └── TaskRunnerTest.cpp   # Unit tests for TaskRunner (Google Test)
+├── scripts/
+│   └── setup-google-unit-test.sh  # Google Test setup script
 ├── doc/                 # Detailed documentation
 │   ├── Singleton.md     # Singleton pattern deep dive
 │   ├── TaskRunner.md    # TaskRunner comprehensive guide
 │   ├── API-Reference.md # Complete API documentation
 │   └── Examples.md      # Practical usage examples
+├── .deps/               # Dependencies (created by build, not in git)
+│   └── googletest/      # Google Test framework (auto-downloaded)
 ├── lib/                 # Static library output (created by make)
 ├── build/               # Build artifacts (created by make)
-├── Makefile
+├── Makefile             # Main build orchestration
+├── Makefile.gtest       # Google Test build and test execution
+├── Makefile.lib         # Library compilation and installation
 └── README.md
 ```
 
 ## Building
 
-Build the static library:
+The project uses a modular Makefile system with Google Test for testing. The build process automatically:
+1. Builds the library
+2. Downloads and sets up Google Test (if not already present)
+3. Runs all tests
+4. Only completes if all tests pass
+
+### Build Commands
+
+Build the library (runs tests first):
 
 ```bash
-make or sudo make install #for system wide
+make
 ```
 
-Build and run tests:
+Install locally (in `build/install/`):
 
 ```bash
-make run-tests
+make install-local
 ```
 
-Build tests only:
+Install system-wide (requires sudo):
 
 ```bash
-make tests
+sudo make install
 ```
 
 Clean build artifacts:
 
 ```bash
 make clean
+```
+
+Clean everything including Google Test:
+
+```bash
+make clean-all
 ```
 
 ## Usage
@@ -240,24 +260,36 @@ Both components are fully thread-safe. See [API-Reference.md](doc/API-Reference.
 
 ## Testing
 
-Run comprehensive unit tests:
+The project uses **Google Test** framework for comprehensive unit testing. Tests are automatically run during the build process.
+
+Run tests manually:
 
 ```bash
-make run-tests
+make -f Makefile.gtest run-tests
 ```
 
-**Test Coverage:**
-- Singleton: Basic functionality, thread safety, multiple types
-- TaskRunner: Single/repeated tasks, stopping, mixed scenarios
+**Test Framework:**
+- Uses Google Test (downloaded automatically on first build)
+- Located in `.deps/googletest/` (not committed to repo)
+- All tests must pass before library is built
 
-See test files in `tests/` for examples of proper usage.
+**Test Coverage:**
+- **Singleton Tests:** Basic functionality, thread safety, multiple singleton types
+- **TaskRunner Tests:** Single tasks, repeated tasks, task stopping, mixed scenarios
+
+See test files in `tests/` for examples of proper usage with Google Test.
 
 ## Requirements
 
 - **C++ Standard**: C++17 or later
 - **Compiler**: GCC 7+, Clang 5+, MSVC 2017+
 - **Platform**: Linux, macOS, Windows (with pthread support)
-- **Dependencies**: Standard library, pthread
+- **Build Tools**: make, cmake (for Google Test)
+- **Dependencies**:
+  - Standard library
+  - pthread
+  - Google Test (downloaded automatically during build)
+  - git (for downloading Google Test)
 
 ## Contributing
 

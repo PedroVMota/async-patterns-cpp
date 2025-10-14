@@ -22,6 +22,7 @@ BUILD_DIR = build
 # Source files
 TASKRUNNER_SRC = $(SRC_DIR)/TaskRunner.cpp
 TASKRUNNER_OBJ = $(BUILD_DIR)/TaskRunner.o
+
 MEMPOOL_SRC = $(SRC_DIR)/MemPool.cpp
 MEMPOOL_OBJ = $(BUILD_DIR)/MemPool.o
 
@@ -43,6 +44,7 @@ $(TASKRUNNER_OBJ): $(TASKRUNNER_SRC) | $(BUILD_DIR)
 
 $(MEMPOOL_OBJ): $(MEMPOOL_SRC) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 
 # Create directories
 $(BUILD_DIR):

@@ -3,6 +3,9 @@ lib/*
 .deps/*
 .cache/*
 
+
+
+
 *.json
 *.o
 *.so

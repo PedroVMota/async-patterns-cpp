@@ -61,7 +61,6 @@ run-tests: tests
 	@$(SINGLETON_TEST_BIN) || (echo "\n✗ Singleton tests failed!" && exit 1)
 	@echo "\n=== Running TaskRunner Tests ==="
 	@$(TASKRUNNER_TEST_BIN) || (echo "\n✗ TaskRunner tests failed!" && exit 1)
-	@echo "\n=== Running MemPool Tests ==="
 	@$(MEMPOOL_TEST_BIN) || (echo "\n✗ MemPool tests failed!" && exit 1)
 	@echo "\n=== All Tests Passed! ==="
 
