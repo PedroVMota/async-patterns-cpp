@@ -6,6 +6,7 @@ Complete API documentation for the C++17 Utilities Library.
 
 1. [Singleton](#singleton)
 2. [TaskRunner](#taskrunner)
+3. [MemPool](#mempool)
 
 ---
 
@@ -434,6 +435,218 @@ struct RepeatedTaskData {
 
 ---
 
+## MemPool
+
+### Class Definition
+
+```cpp
+class MemPool
+```
+
+**Header:** `<MemPool.h>`
+
+**Link:** `-ltaskrunner -pthread`
+
+**Description:** Memory pool allocator with tracking capabilities.
+
+### Public Methods
+
+#### Constructor
+
+```cpp
+MemPool()
+```
+
+**Description:** Creates a new empty memory pool
+
+**Thread Safety:** N/A
+
+**Example:**
+```cpp
+MemPool pool;
+```
+
+#### Destructor
+
+```cpp
+~MemPool()
+```
+
+**Description:** Destroys the memory pool
+
+**Warning:** Does NOT automatically free allocated memory. Call `reset()` or `deallocate()` manually.
+
+**Thread Safety:** No
+
+#### allocate
+
+```cpp
+void* allocate(size_t size)
+```
+
+**Description:** Allocates memory and tracks it in the pool
+
+**Parameters:**
+- `size` - Number of bytes to allocate
+
+**Returns:** Pointer to allocated memory
+
+**Thread Safety:** No
+
+**Time Complexity:** O(log n) where n = number of tracked allocations
+
+**Example:**
+```cpp
+void* ptr = pool.allocate(1024);
+```
+
+**Notes:**
+- Memory is allocated using `new char[size]`
+- Pointer is automatically tracked
+- Memory is aligned for any object type
+
+#### deallocate
+
+```cpp
+void deallocate(void* ptr)
+```
+
+**Description:** Deallocates a previously allocated pointer
+
+**Parameters:**
+- `ptr` - Pointer to deallocate (can be nullptr)
+
+**Thread Safety:** No
+
+**Time Complexity:** O(log n)
+
+**Example:**
+```cpp
+pool.deallocate(ptr);
+```
+
+**Notes:**
+- Safe to call with nullptr (no-op)
+- Safe to call twice on same pointer (no-op)
+- Safe to call with untracked pointer (no-op)
+- Only deallocates if pointer is tracked by this pool
+
+#### reset
+
+```cpp
+void reset()
+```
+
+**Description:** Deallocates all tracked memory and clears the pool
+
+**Thread Safety:** No
+
+**Time Complexity:** O(n) where n = number of tracked allocations
+
+**Example:**
+```cpp
+pool.reset(); // Free all allocations
+```
+
+**Notes:**
+- All tracked pointers are deallocated
+- Pool size becomes 0
+- Should be called before destructor to avoid leaks
+
+#### isAllocated
+
+```cpp
+bool isAllocated(void* ptr)
+```
+
+**Description:** Check if a pointer is tracked by this pool
+
+**Parameters:**
+- `ptr` - Pointer to check
+
+**Returns:** `true` if pointer is tracked, `false` otherwise
+
+**Thread Safety:** No
+
+**Time Complexity:** O(n)
+
+**Example:**
+```cpp
+if (pool.isAllocated(ptr)) {
+    std::cout << "Pointer is valid\n";
+}
+```
+
+**Notes:**
+- Returns `false` after pointer is deallocated
+- Returns `false` for pointers not allocated by this pool
+
+#### getSize
+
+```cpp
+int getSize() const
+```
+
+**Description:** Returns the number of currently tracked allocations
+
+**Returns:** Number of active allocations
+
+**Thread Safety:** No
+
+**Time Complexity:** O(1)
+
+**Example:**
+```cpp
+std::cout << "Active: " << pool.getSize() << "\n";
+```
+
+### Deleted Methods
+
+```cpp
+MemPool(const MemPool&) = delete;
+MemPool& operator=(const MemPool&) = delete;
+MemPool(MemPool&&) = delete;
+MemPool& operator=(MemPool&&) = delete;
+```
+
+**Description:** Copy and move operations are explicitly deleted
+
+**Rationale:** Memory pool manages tracked allocations that cannot be safely copied or moved
+
+### Private Members
+
+```cpp
+std::set<uintptr_t> _serialized_memory
+```
+
+**Description:** Stores integer representations of tracked pointers for O(log n) lookup
+
+### Usage Example
+
+```cpp
+MemPool pool;
+
+// Allocate
+int* data = static_cast<int*>(pool.allocate(10 * sizeof(int)));
+
+// Use
+for (int i = 0; i < 10; ++i) {
+    data[i] = i;
+}
+
+// Verify
+if (pool.isAllocated(data)) {
+    std::cout << "Memory tracked\n";
+}
+
+// Cleanup
+pool.deallocate(data);
+// or
+pool.reset(); // Cleanup all
+```
+
+---
+
 ## Common Types
 
 ### Duration Types
@@ -524,6 +737,9 @@ runner.executeRepeatedTask(task, std::chrono::seconds(1), 10);
 | `TaskRunner::executeRepeatedTask()` | ✓ Yes | Mutex protected |
 | `TaskRunner::stopAll()` | ✓ Yes | Atomic operations |
 | `TaskRunner::waitForCompletion()` | ✓ Yes | Mutex protected |
+| `MemPool::allocate()` | ✗ No | Use thread-local or external mutex |
+| `MemPool::deallocate()` | ✗ No | Use thread-local or external mutex |
+| `MemPool::reset()` | ✗ No | Use thread-local or external mutex |
 | Task execution | ⚠ User responsibility | Protect shared state |
 
 ---
@@ -552,6 +768,18 @@ Where n = number of tasks
 **Thread Overhead:**
 - Per thread: ~8KB stack (platform dependent)
 - Thread creation: ~few microseconds
+
+### MemPool
+
+| Operation | Time | Space |
+|-----------|------|-------|
+| `allocate()` | O(log n) | ~32-48 bytes overhead per allocation |
+| `deallocate()` | O(log n) | O(1) |
+| `isAllocated()` | O(n) | O(1) |
+| `reset()` | O(n) | O(1) |
+| `getSize()` | O(1) | O(1) |
+
+Where n = number of tracked allocations
 
 ---
 
@@ -590,6 +818,16 @@ Where n = number of tasks
 - pthread (automatic with `-pthread`)
 - libtaskrunner.a (static library)
 
+### MemPool
+
+**Headers:**
+- `<cstdint>`
+- `<iostream>`
+- `<set>`
+
+**Libraries:**
+- libtaskrunner.a (static library, includes MemPool)
+
 ---
 
 ## Compilation Flags
@@ -600,12 +838,14 @@ Where n = number of tasks
 g++ -std=c++17 -pthread your_code.cpp -o your_program
 ```
 
-### For TaskRunner (With Library)
+### For TaskRunner or MemPool (With Library)
 
 ```bash
 g++ -std=c++17 -I./include your_code.cpp \
     -L./lib -ltaskrunner -pthread -o your_program
 ```
+
+**Note:** The `libtaskrunner.a` library includes both TaskRunner and MemPool implementations.
 
 ### Recommended Warnings
 

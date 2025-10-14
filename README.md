@@ -1,6 +1,6 @@
 # C++17 Utilities Library
 
-A collection of thread-safe C++17 utilities including a Singleton pattern implementation and a TaskRunner for asynchronous task execution.
+A collection of thread-safe C++17 utilities including a Singleton pattern implementation, a TaskRunner for asynchronous task execution, and a MemPool for tracked memory allocation.
 
 ## Quick Links
 
@@ -26,6 +26,13 @@ A collection of thread-safe C++17 utilities including a Singleton pattern implem
 - Infinite task execution with stop capability
 - Automatic task cleanup after execution
 
+### MemPool
+- Tracked memory allocation and deallocation
+- Bulk deallocation with `reset()`
+- Allocation verification
+- Memory leak detection support
+- Useful for temporary/scoped allocations
+
 ## Documentation
 
 Comprehensive documentation is available in the `doc/` folder:
@@ -41,6 +48,12 @@ Comprehensive documentation is available in the `doc/` folder:
   - Task execution lifecycle
   - Thread management and safety
   - Performance considerations
+
+- **[MemPool.md](doc/MemPool.md)** - Memory pool allocator guide
+  - Tracked allocation system
+  - Bulk deallocation with reset()
+  - Memory leak detection
+  - Usage patterns and best practices
 
 - **[API-Reference.md](doc/API-Reference.md)** - Full API documentation
   - Complete method signatures
@@ -95,23 +108,48 @@ runner.executeRepeatedTask(
 runner.waitForCompletion();
 ```
 
+### MemPool
+
+```cpp
+#include "MemPool.h"
+
+MemPool pool;
+
+// Allocate memory
+void* ptr = pool.allocate(1024);
+
+// Use the memory
+int* data = static_cast<int*>(ptr);
+data[0] = 42;
+
+// Deallocate
+pool.deallocate(ptr);
+
+// Or bulk deallocate all
+pool.reset();
+```
+
 ## Directory Structure
 
 ```
 singleton_library/
 ├── include/
 │   ├── Singleton.h      # Singleton template class (header-only)
-│   └── TaskRunner.h     # TaskRunner class header
+│   ├── TaskRunner.h     # TaskRunner class header
+│   └── MemPool.h        # MemPool class header
 ├── taskrunner/
-│   └── TaskRunner.cpp   # TaskRunner implementation
+│   ├── TaskRunner.cpp   # TaskRunner implementation
+│   └── MemPool.cpp      # MemPool implementation
 ├── tests/
 │   ├── SingletonTest.cpp    # Unit tests for Singleton (Google Test)
-│   └── TaskRunnerTest.cpp   # Unit tests for TaskRunner (Google Test)
+│   ├── TaskRunnerTest.cpp   # Unit tests for TaskRunner (Google Test)
+│   └── MemPoolTest.cpp      # Unit tests for MemPool (Google Test)
 ├── scripts/
 │   └── setup-google-unit-test.sh  # Google Test setup script
 ├── doc/                 # Detailed documentation
 │   ├── Singleton.md     # Singleton pattern deep dive
 │   ├── TaskRunner.md    # TaskRunner comprehensive guide
+│   ├── MemPool.md       # MemPool allocator guide
 │   ├── API-Reference.md # Complete API documentation
 │   └── Examples.md      # Practical usage examples
 ├── .deps/               # Dependencies (created by build, not in git)
