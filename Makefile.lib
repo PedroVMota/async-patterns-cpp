@@ -1,0 +1,96 @@
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -I./include
+AR = ar
+ARFLAGS = rcs
+
+# Installation directories
+PREFIX = /usr/local
+INSTALL_LIB_DIR = $(PREFIX)/lib
+INSTALL_INCLUDE_DIR = $(PREFIX)/include
+
+# Local installation directory
+LOCAL_INSTALL_DIR = build/install
+LOCAL_INSTALL_LIB_DIR = $(LOCAL_INSTALL_DIR)/lib
+LOCAL_INSTALL_INCLUDE_DIR = $(LOCAL_INSTALL_DIR)/include
+
+# Directories
+INCLUDE_DIR = include
+SRC_DIR = taskrunner
+LIB_DIR = lib
+BUILD_DIR = build
+
+# Source files
+TASKRUNNER_SRC = $(SRC_DIR)/TaskRunner.cpp
+TASKRUNNER_OBJ = $(BUILD_DIR)/TaskRunner.o
+MEMPOOL_SRC = $(SRC_DIR)/MemPool.cpp
+MEMPOOL_OBJ = $(BUILD_DIR)/MemPool.o
+
+# Output
+LIBRARY = $(LIB_DIR)/libtaskrunner.a
+
+# Default target
+all: library
+
+# Build the static library
+library: $(LIBRARY)
+	@echo "Static library built successfully: $(LIBRARY)"
+
+$(LIBRARY): $(TASKRUNNER_OBJ) $(MEMPOOL_OBJ) | $(LIB_DIR)
+	$(AR) $(ARFLAGS) $@ $^
+
+$(TASKRUNNER_OBJ): $(TASKRUNNER_SRC) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(MEMPOOL_OBJ): $(MEMPOOL_SRC) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Create directories
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+$(LIB_DIR):
+	mkdir -p $(LIB_DIR)
+
+# Install library and headers locally (in build/install)
+install-local: library
+	@echo "Installing TaskRunner library locally to $(LOCAL_INSTALL_DIR)..."
+	@mkdir -p $(LOCAL_INSTALL_LIB_DIR)
+	@mkdir -p $(LOCAL_INSTALL_INCLUDE_DIR)
+	@cp $(LIBRARY) $(LOCAL_INSTALL_LIB_DIR)/
+	@cp $(INCLUDE_DIR)/Singleton.h $(LOCAL_INSTALL_INCLUDE_DIR)/
+	@cp $(INCLUDE_DIR)/TaskRunner.h $(LOCAL_INSTALL_INCLUDE_DIR)/
+	@cp $(INCLUDE_DIR)/MemPool.h $(LOCAL_INSTALL_INCLUDE_DIR)/
+	@echo "Local installation complete!"
+	@echo "Library installed to: $(LOCAL_INSTALL_LIB_DIR)/libtaskrunner.a"
+	@echo "Headers installed to: $(LOCAL_INSTALL_INCLUDE_DIR)/"
+	@echo ""
+	@echo "To use the library, compile with:"
+	@echo "  g++ -I$(LOCAL_INSTALL_INCLUDE_DIR) your_code.cpp -L$(LOCAL_INSTALL_LIB_DIR) -ltaskrunner -pthread"
+
+# Install library and headers system-wide (requires sudo)
+install: library
+	@echo "Installing TaskRunner library system-wide to $(PREFIX)..."
+	install -d $(INSTALL_LIB_DIR)
+	install -d $(INSTALL_INCLUDE_DIR)
+	install -m 644 $(LIBRARY) $(INSTALL_LIB_DIR)/
+	install -m 644 $(INCLUDE_DIR)/Singleton.h $(INSTALL_INCLUDE_DIR)/
+	install -m 644 $(INCLUDE_DIR)/TaskRunner.h $(INSTALL_INCLUDE_DIR)/
+	install -m 644 $(INCLUDE_DIR)/MemPool.h $(INSTALL_INCLUDE_DIR)/
+	@echo "System-wide installation complete!"
+	@echo "Library installed to: $(INSTALL_LIB_DIR)/libtaskrunner.a"
+	@echo "Headers installed to: $(INSTALL_INCLUDE_DIR)/"
+
+# Uninstall library and headers from system
+uninstall:
+	@echo "Uninstalling TaskRunner library from $(PREFIX)..."
+	rm -f $(INSTALL_LIB_DIR)/libtaskrunner.a
+	rm -f $(INSTALL_INCLUDE_DIR)/Singleton.h
+	rm -f $(INSTALL_INCLUDE_DIR)/TaskRunner.h
+	rm -f $(INSTALL_INCLUDE_DIR)/MemPool.h
+	@echo "Uninstallation complete!"
+
+# Clean build artifacts
+clean:
+	rm -rf $(BUILD_DIR) $(LIB_DIR)
+
+.PHONY: all library install-local install uninstall clean
